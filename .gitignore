@@ -1,0 +1,29 @@
+# Obsidian workspace state (machine-specific)
+.obsidian/workspace*.json
+.obsidian/hotkeys.json
+.obsidian/graph.json
+.obsidian/cache/
+.obsidian/plugins/
+.obsidian/themes/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code local state
+.claude/
+
+# User's sync config (contains local absolute paths)
+scripts/vault-config.yml
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+
+# Temp / logs
+*.log
+*.tmp

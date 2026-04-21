@@ -1,0 +1,20 @@
+# Copy this file to vault-config.yml and fill in your own project paths.
+# vault-config.yml is gitignored so your local absolute paths don't leak into the repo.
+#
+# Format: one entry per project. `name` becomes mirror/<name>/ in the vault.
+# `source` is the absolute path to that project's docs/ directory.
+
+projects:
+  - name: motionforge
+    source: /absolute/path/to/motionforge/docs
+
+  - name: autorigging
+    source: /absolute/path/to/autorigging/docs
+
+# Tips:
+# - Use absolute paths. The sync script runs from scripts/ but writes into mirror/ at vault root.
+# - Windows paths: use forward slashes or double backslashes:
+#     source: C:/Users/you/code/my-project/docs
+#     source: C:\\Users\\you\\code\\my-project\\docs
+# - To remove a project from sync: delete its entry here AND manually delete mirror/<name>/.
+#   The sync script does not auto-remove projects that used to be in the config.
