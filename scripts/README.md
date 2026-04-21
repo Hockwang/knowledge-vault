@@ -1,35 +1,35 @@
 # scripts/
 
-同步脚本：把各项目 `docs/` 单向强制同步到 `mirror/<project>/`。
+Sync scripts: one-way force-sync each project's `docs/` into `mirror/<project>/`.
 
-## 文件
+## Files
 
-| 文件 | 说明 |
-|------|------|
-| `vault-config.example.yml` | 配置模板。**不编辑它**——拷贝到 `vault-config.yml` 再编辑 |
-| `vault-config.yml` | 你的本地配置（gitignored，不会 push 到 repo） |
-| `sync.sh` | Unix/macOS 同步脚本，需要 `rsync` |
-| `sync.ps1` | Windows PowerShell 同步脚本，用内置的 `robocopy` |
+| File | Purpose |
+|------|---------|
+| `vault-config.example.yml` | Config template. **Don't edit it directly** — copy it to `vault-config.yml` and edit that |
+| `vault-config.yml` | Your local config (gitignored, won't be pushed) |
+| `sync.sh` | Unix/macOS sync script, needs `rsync` |
+| `sync.ps1` | Windows PowerShell sync script, uses built-in `robocopy` |
 
-## 首次使用
+## First-time setup
 
 ```bash
 cp scripts/vault-config.example.yml scripts/vault-config.yml
-# 编辑 scripts/vault-config.yml，把示例项目换成你自己的
+# Edit scripts/vault-config.yml and replace the example projects with your own
 ```
 
-`vault-config.yml` 格式：
+`vault-config.yml` format:
 
 ```yaml
 projects:
-  - name: my-backend                         # 会出现在 mirror/my-backend/
-    source: /home/me/code/my-backend/docs    # 绝对路径
+  - name: my-backend                         # appears as mirror/my-backend/
+    source: /home/me/code/my-backend/docs    # absolute path
 
   - name: my-frontend
     source: /home/me/code/my-frontend/docs
 ```
 
-## 跑同步
+## Running sync
 
 ```bash
 # Unix / macOS
@@ -39,55 +39,54 @@ projects:
 .\scripts\sync.ps1
 ```
 
-输出示例：
+Example output:
 
 ```
-→ my-backend: /home/me/code/my-backend/docs → mirror/my-backend/
-→ my-frontend: /home/me/code/my-frontend/docs → mirror/my-frontend/
+-> my-backend: /home/me/code/my-backend/docs -> mirror/my-backend/
+-> my-frontend: /home/me/code/my-frontend/docs -> mirror/my-frontend/
 
-Synced 2 project(s). Now tell Claude Code:
-  "mirror/<project>/ 同步完了，开始整理"
+Synced 2 project(s). Now tell Claude Code to start processing.
 ```
 
-## 同步语义
+## Sync semantics
 
-- **单向**：源 → mirror，不反向
-- **强制覆盖**：`rsync --delete` / `robocopy /MIR`，mirror 里的手动修改会被**覆盖掉**（包括删除）
-- **幂等**：跑多次效果一样
-- **按项目独立**：每个项目的同步互不影响，一个源目录不存在只会 warn 跳过
+- **One-way**: source → mirror, not the reverse
+- **Force-overwrite**: `rsync --delete` / `robocopy /MIR` — manual edits in `mirror/` are **overwritten** (including deleted if the source no longer has them)
+- **Idempotent**: running it multiple times gives the same result
+- **Per-project isolation**: each project's sync is independent; a missing source directory only warns and skips
 
-## 添加项目
+## Adding a project
 
-在 `vault-config.yml` 加一条：
+Add a new entry to `vault-config.yml`:
 
 ```yaml
   - name: my-new-project
     source: /path/to/my-new-project/docs
 ```
 
-再跑一次同步。
+Then rerun sync.
 
-## 移除项目
+## Removing a project
 
-**两步**：
+**Two steps**:
 
-1. 从 `vault-config.yml` 删掉对应条目
-2. 手动删除 `mirror/<name>/` 目录
+1. Remove the entry from `vault-config.yml`
+2. Manually delete `mirror/<name>/`
 
-同步脚本**不会自动删**已从配置里移除的项目（这是刻意的——避免误删）。
+The sync script **will not auto-delete** projects that have been removed from the config. This is intentional — to avoid accidental data loss.
 
-## 故障排查
+## Troubleshooting
 
-**Windows 上 `robocopy` 报找不到源**：
-确认 `vault-config.yml` 里的路径用**正斜杠** `C:/Users/...` 或**双反斜杠** `C:\\Users\\...`（单反斜杠 YAML 会吃掉）。
+**Windows: `robocopy` can't find the source**
+Check that paths in `vault-config.yml` use **forward slashes** (`C:/Users/...`) or **double backslashes** (`C:\\Users\\...`). YAML strips single backslashes.
 
-**Unix 上 `rsync: command not found`**：
+**Unix: `rsync: command not found`**
 - macOS: `brew install rsync`
 - Ubuntu/Debian: `apt install rsync`
 
-**同步完 mirror/ 里没东西**：
-可能是源路径指向了项目根目录而不是 `docs/`——确认 `source:` 指向的就是你想镜像的那层。
+**Sync finishes but `mirror/` is empty**
+The `source:` path probably points at the project root instead of `docs/`. Confirm you're pointing at the layer you actually want to mirror.
 
-## 自定义
+## Customizing
 
-脚本里的 YAML 解析是最简实现，**不支持**嵌套字段、多行字符串、复杂类型。如果你需要更多配置字段（比如 per-project 的 include/exclude 规则），建议引入 `yq` 或替换成 Python 脚本。
+The YAML parsing in both scripts is minimal — it **does not** support nested fields, multi-line strings, or complex types. If you need more config options (e.g. per-project include/exclude rules), introduce `yq` or replace these with a Python script.

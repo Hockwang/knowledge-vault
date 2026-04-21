@@ -1,31 +1,31 @@
 # mirror/
 
-**【只读】** 各项目 `docs/` 的镜像区。
+**[READ-ONLY]** Mirror area for each project's `docs/`.
 
-## 关键约束
+## Hard constraints
 
-- 本目录由 `scripts/sync.sh` / `scripts/sync.ps1` **单向强制覆盖**
-- 任何手动修改会在下次同步时**全部丢失**
-- agent 绝不能在这里写文件（见 `AGENT-GUIDE.md` 三条硬规则）
+- This directory is **one-way force-overwritten** by `scripts/sync.sh` / `scripts/sync.ps1`
+- Any manual edits here will be **lost on the next sync**
+- The agent must never write files here (see the three hard rules in `AGENT-GUIDE.md`)
 
-## 同步后的结构
+## Layout after sync
 
-每个项目一个子目录，结构由项目自己的 `docs/` 决定。推荐约定：
+One subdirectory per project. Internal structure mirrors whatever the source project's `docs/` looks like. Recommended convention:
 
 ```
 mirror/<your-project>/
-├── architecture/     ← 系统架构文档
-├── concepts/         ← 领域概念 / 格式规范
-├── decisions/        ← ADR 架构决策
-├── gotchas/          ← 踩坑记录
-└── index.md          ← 项目文档入口
+├── architecture/     ← system architecture docs
+├── concepts/         ← domain concepts / format specs
+├── decisions/        ← architecture decision records (ADRs)
+├── gotchas/          ← battle scars / pitfalls
+└── index.md          ← project docs entry point
 ```
 
-但 agent 不强制这个结构——你的项目 `docs/` 长什么样，镜像进来就长什么样。
+The agent doesn't enforce this structure — whatever shape your project `docs/` has, that's what gets mirrored in.
 
-## 配置同步源
+## Configuring sync sources
 
-编辑 `scripts/vault-config.yml`（从 `scripts/vault-config.example.yml` 拷贝）：
+Edit `scripts/vault-config.yml` (copy from `scripts/vault-config.example.yml`):
 
 ```yaml
 projects:
@@ -36,16 +36,16 @@ projects:
     source: /home/user/code/my-frontend/docs
 ```
 
-然后跑 `./scripts/sync.sh`（Unix）或 `.\scripts\sync.ps1`（Windows），本目录下会出现 `my-backend/` 和 `my-frontend/`。
+Then run `./scripts/sync.sh` (Unix) or `.\scripts\sync.ps1` (Windows). `my-backend/` and `my-frontend/` will appear under this directory.
 
-## 添加/移除项目
+## Adding / removing projects
 
-- **添加**：在 `vault-config.yml` 加一条 `- name:` + `source:`，跑同步
-- **移除**：从 `vault-config.yml` 删掉对应条目 **并**手动删 `mirror/<name>/`（同步脚本不会自动删已移除的项目）
+- **Add**: add a `- name:` + `source:` entry to `vault-config.yml`, run sync
+- **Remove**: remove the entry from `vault-config.yml` **and** manually delete `mirror/<name>/`. The sync script does not auto-remove projects that are no longer in the config.
 
-## 为什么是只读
+## Why read-only
 
-两个理由：
+Two reasons:
 
-1. **同步是强制覆盖**。mirror 存在的意义是"项目 docs 的权威副本"，不是让你在这里编辑。真正要改文档去源项目改。
-2. **agent 的工作契约**。agent 在 `mirror/` 里找原料，在 `notes/` 里写产出。这个职责分离让 agent 的输出可追溯、可审计——每个 `notes/` 笔记都用 `[[mirror/...]]` 双链指回原料。
+1. **Sync is a forced overwrite**. `mirror/` exists to be "the authoritative copy of each project's docs", not a place for you to edit. If you actually want to change a doc, change it in the source project.
+2. **Agent's working contract**. The agent reads raw material from `mirror/` and writes output to `notes/`. This separation of duties keeps the agent's output traceable and auditable — every `notes/` note cites its source via `[[mirror/...]]` wiki-links.

@@ -1,160 +1,193 @@
+**English** | [中文](README.zh-CN.md)
+
 # Knowledge Vault — AI-agent-operated cross-project knowledge system
 
-> **TL;DR (English)**: An Obsidian vault template designed to be operated by
-> Claude Code as an agent. Mirrors docs from multiple code projects into a
-> read-only area, then distills cross-project patterns into a writeable notes
-> area. Ships with sync scripts and a behavior contract (`AGENT-GUIDE.md`) for
-> the agent. Methodology-only — no real project docs are included; bring your own.
+> An Obsidian vault template designed to be operated by Claude Code as an agent.
+> Mirrors docs from multiple code projects into a read-only area, then distills
+> cross-project patterns into a writeable notes area. Ships with sync scripts
+> and a behavior contract ([`AGENT-GUIDE.md`](AGENT-GUIDE.md)) for the agent.
+> Methodology only — no real project docs included; bring your own.
 
 ---
 
-## 为什么要这个 vault
+## Why this vault exists
 
-每个代码项目都有自己的 `docs/`，但跨项目的模式没有家：
+Every code project has its own `docs/`. But cross-project insight has no home:
 
-- 不同项目**重复踩过的同一类坑**（边界格式没转换、基准态被污染…）
-- 不同项目**独立得出的同一个工程共识**（"跨 roundtrip 用 name 不用 UUID"）
-- 一个项目解决了、另一个还没遇到的**演进对照**
+- The **same class of bug** that multiple projects independently stepped on (missing
+  format conversions at boundaries, baseline contamination…)
+- **Engineering consensus** that multiple projects independently arrived at
+  ("use name, not UUID, for cross-roundtrip identity")
+- **Evolution asymmetries** — one project solved it, another hasn't hit it yet
 
-这些"跨项目洞察"的价值远大于单项目 docs，但没人会手动去维护它们——除非有个稳定的地方放、有人专门负责提炼。
+These cross-project insights are worth more than any single-project doc, but
+nobody maintains them by hand — unless there's a stable place for them and
+someone whose job is to distill.
 
-**这个 vault 给跨项目洞察一个家，并让 AI agent 负责提炼，而不是你人肉搬运。**
+**This vault gives cross-project insight a home and puts an AI agent in charge of
+distilling it — so you don't have to copy-paste it by hand.**
 
 ---
 
-## 工作原理
+## How it works
 
 ```
-┌────────────────────┐  sync (单向强制覆盖)  ┌─────────────────────┐
-│ your project/docs/ │ ─────────────────────→ │ vault/mirror/<name>/│  ← 只读
-└────────────────────┘                        └─────────────────────┘
-                                                        │
-                                                        │  agent 读取 + 提炼
-                                                        ↓
-                                              ┌─────────────────────┐
-                                              │ vault/notes/        │  ← agent 唯一可写
-                                              │  ├── synthesized/   │    单项目提炼
-                                              │  └── cross-project/ │    跨项目模式
-                                              └─────────────────────┘
+┌────────────────────┐  sync (one-way force overwrite)  ┌─────────────────────┐
+│ your project/docs/ │ ────────────────────────────────→│ vault/mirror/<name>/│  ← read-only
+└────────────────────┘                                  └─────────────────────┘
+                                                                  │
+                                                                  │ agent reads + distills
+                                                                  ↓
+                                                        ┌─────────────────────┐
+                                                        │ vault/notes/        │  ← agent's only
+                                                        │  ├── synthesized/   │    writeable area
+                                                        │  └── cross-project/ │
+                                                        └─────────────────────┘
 ```
 
-三个组成部分：
+Three pieces:
 
-- **`mirror/`** — 只读镜像区。每个子目录是一个项目 `docs/` 的快照。同步脚本单向强制覆盖，**任何手动修改都会在下次同步时丢失**。
-- **`notes/`** — agent 唯一可写区。存放单项目提炼（`synthesized/`）+ 跨项目抽象模式（`cross-project/`）。
-- **`CLAUDE.md` + `AGENT-GUIDE.md`** — 给 Claude Code 的行为契约：什么能动、什么不能动、遇到新同步怎么 diff、跨项目模式什么时候抽出来、笔记用什么格式写。
+- **`mirror/`** — read-only mirror. Each subdir is a snapshot of one project's `docs/`.
+  The sync script overwrites it in one direction; **manual edits are lost on the
+  next sync**.
+- **`notes/`** — the agent's only writeable area. Holds single-project distillations
+  (`synthesized/`) and cross-project patterns (`cross-project/`).
+- **[`CLAUDE.md`](CLAUDE.md) + [`AGENT-GUIDE.md`](AGENT-GUIDE.md)** — the behavior
+  contract Claude Code loads: what it can touch, what it can't, how to diff a new
+  sync, when to extract a cross-project pattern, what format to write notes in.
 
-你的角色：跑同步脚本 + 给 agent 发"开始整理"指令 + 审阅产出。
-Agent 的角色：diff、提炼、连接、抽象、写笔记。
-
----
-
-## 价值主张
-
-**单项目 docs 是必要的但不够。**
-
-举个本模板作者实际遇到的例子：两个独立开发的项目（一个是 3D 动画编辑器，一个是 AI 打关节研究）各自在自己的 docs 里得出"跨 roundtrip 标识用 name 不用 UUID"的决策——但各自只是在单项目 ADR 里记了一笔。
-
-直到 agent 在 `cross-project/decisions/` 下把这两笔连起来，才浮现出"这是一个**两个独立项目共同验证过的强工程信号**"——远比任何一方单独记录更有说服力。
-
-**认识到这是模式，是 agent 的主要价值。** 没有这一步，你完全可以不用 Obsidian。
+Your role: run the sync + send the agent a "start processing" trigger + review output.
+Agent's role: diff, distill, connect, abstract, write notes.
 
 ---
 
-## 快速开始
+## Value proposition
 
-### 前提
+**Single-project docs are necessary but not sufficient.**
 
-- Obsidian（任意版本，纯用来渲染和双链导航）
-- Claude Code CLI（给 `mirror/` 做提炼的 agent——见 https://claude.com/claude-code）
-- `rsync`（Unix/macOS）或 `robocopy`（Windows 自带）
+Concrete example from the template author's own use: two unrelated projects (a 3D
+animation editor and an AI joint-rigging study) each, in their own ADRs, arrived
+at "use name, not UUID, for cross-roundtrip identity" — but each project recorded
+it as a one-off.
 
-### 5 步启动
+Only once the agent connected the two in `cross-project/decisions/` did it become
+clear: **this is an engineering signal independently validated by two distinct
+projects** — far more convincing than either alone.
+
+**Recognizing patterns is the agent's primary value-add.** Without that step, you
+might as well skip Obsidian.
+
+---
+
+## Quick start
+
+### Prerequisites
+
+- Obsidian (any version — purely for rendering and wiki-link navigation)
+- Claude Code CLI (the agent that distills `mirror/` — see https://claude.com/claude-code)
+- `rsync` (Unix/macOS) or `robocopy` (built into Windows)
+
+### 5-step setup
 
 ```bash
 # 1. Clone
-git clone <this-repo-url> knowledge-vault
+git clone https://github.com/Hockwang/knowledge-vault.git
 cd knowledge-vault
 
-# 2. 填同步配置（告诉脚本你要镜像哪些项目的 docs/）
+# 2. Fill out the sync config (tell the script which projects' docs/ to mirror)
 cp scripts/vault-config.example.yml scripts/vault-config.yml
-# 编辑 scripts/vault-config.yml，填你自己的项目路径
+# Edit scripts/vault-config.yml with your own project paths
 
-# 3. 跑第一次同步
-./scripts/sync.sh           # Unix/macOS
-# 或
+# 3. Run the first sync
+./scripts/sync.sh           # Unix / macOS
+# or
 .\scripts\sync.ps1          # Windows PowerShell
 
-# 4. 用 Obsidian 打开 vault 根目录（注意是 knowledge-vault/，不是 notes/！）
-#    见 AGENT-GUIDE.md 里的 "Vault 根目录约定" 一节
+# 4. Open the vault ROOT in Obsidian (not notes/! — see AGENT-GUIDE.md's
+#    "Vault root convention" section for why this matters)
 
-# 5. 在 vault 根目录启动 Claude Code，告诉它：
-#    "mirror/<your-project>/ 同步完了，开始整理"
-#    它会按 AGENT-GUIDE.md 的 5 步流程走：diff → 决定动作 → 跨项目连接 → 更新索引 → 汇报
+# 5. Start Claude Code in the vault root, then tell it:
+#    "mirror/<your-project>/ is synced, start processing"
+#    (or the Chinese equivalent: "mirror/<project>/ 同步完了，开始整理")
+#    It will follow the 5-step workflow in AGENT-GUIDE.md:
+#    diff → decide action → cross-project connect → update index → report
 ```
 
 ---
 
-## 仓库结构
+## Repo layout
 
 ```
 knowledge-vault/
-├── README.md                   ← 本文件
-├── LICENSE                     ← MIT
-├── CLAUDE.md                   ← agent 入口（Claude Code 启动时自动加载）
-├── AGENT-GUIDE.md              ← 完整 agent 工作手册
+├── README.md / README.zh-CN.md     ← EN primary, CN variant
+├── LICENSE                         ← MIT
+├── CLAUDE.md / CLAUDE.en.md        ← Agent entry (CN primary, EN mirror)
+├── AGENT-GUIDE.md / AGENT-GUIDE.en.md  ← Agent manual (CN primary, EN mirror)
 ├── .gitignore
-├── .obsidian/                  ← 最小 Obsidian 配置
-├── mirror/                     ← 【只读】项目 docs/ 镜像区，sync 脚本覆盖
-│   └── <your-project>/         ← sync 后出现
-├── notes/                      ← 【可写】agent 产出区
-│   ├── index.md                ← 总索引
-│   ├── log.md                  ← 工作日志
-│   ├── synthesized/            ← 单项目提炼
-│   └── cross-project/          ← 跨项目模式（最高价值）
+├── .obsidian/                      ← minimal Obsidian config
+├── mirror/                         ← [READ-ONLY] project docs mirrors; sync overwrites
+│   └── <your-project>/             ← appears after sync
+├── notes/                          ← [WRITEABLE] agent's output area
+│   ├── index.md                    ← master index
+│   ├── log.md                      ← work log
+│   ├── synthesized/                ← per-project distillations
+│   └── cross-project/              ← cross-project patterns (highest value)
 │       ├── patterns/
 │       ├── decisions/
 │       └── gotchas/
 └── scripts/
-    ├── sync.sh / sync.ps1      ← 同步脚本
+    ├── sync.sh / sync.ps1          ← sync scripts
     ├── vault-config.example.yml
-    └── README.md               ← 脚本使用说明
+    └── README.md                   ← script usage
 ```
 
----
-
-## 定制
-
-核心不变量：
-
-- `mirror/` 只读、`notes/` 唯一可写、agent 的工作是**提炼**不是搬运
-- 跨 roundtrip / 跨系统 / 跨项目的引用用 name 不用 UUID（便于人类可读 + 跨序列化稳定）
-- 冲突或歧义时 agent 必须停下来问用户，不要武断合并
-
-除此之外都可以按自己的需求改：
-
-- `AGENT-GUIDE.md` 里的 5 步工作流（你可以加/减步骤）
-- 笔记模板的 frontmatter 字段
-- `synthesized/` 和 `cross-project/` 的子分类（`patterns/decisions/gotchas/` 只是一个起点）
-- 同步脚本（你可以用别的工具代替 rsync/robocopy）
-
-改完如果对 agent 的行为有新要求，**更新 `AGENT-GUIDE.md` 并标 `updated: YYYY-MM-DD`**——这是 agent 下次启动时会重新读的契约。
+> **Agent docs**: `CLAUDE.md` and `AGENT-GUIDE.md` are **Chinese by default**
+> because Claude Code auto-loads them at session start and the template
+> author's workflow is Chinese. English mirrors live at `CLAUDE.en.md` and
+> `AGENT-GUIDE.en.md`. If your workflow is English, rename the `.en.md` files
+> to take their slot (or point Claude Code at them explicitly).
 
 ---
 
-## 为什么是 Obsidian + Claude Code
+## Customize
 
-**Obsidian** 提供：
-- 双链 `[[...]]` 导航（跨项目笔记互链的核心）
-- frontmatter 支持（agent 用 `tags`/`sources`/`updated` 结构化元数据）
-- 本地纯 markdown（不锁死在某个工具里，git 友好）
+Core invariants (don't break these):
 
-**Claude Code** 提供：
-- `CLAUDE.md` 自动加载机制（行为契约在新 session 自动生效）
-- 文件读写 + 代码库搜索（agent 扫描 `mirror/` 找跨项目关联）
-- Plan 模式 / Todo 管理（agent 整理时可以 diff-first，用户确认后再动手）
+- `mirror/` is read-only, `notes/` is the only writeable area, the agent's job
+  is to **distill**, not to copy-paste
+- Cross-roundtrip / cross-system / cross-project identifiers use **names, not
+  UUIDs** (human-readable, stable across serialization)
+- On conflict or ambiguity the agent must **stop and ask** rather than decide
+  unilaterally
 
-两者都不是"必须"——方法论本身可以用其它工具实现——但这是目前最顺手的组合。
+Everything else is fair game:
+
+- The 5-step workflow in `AGENT-GUIDE.md` (add/remove steps to taste)
+- Note frontmatter fields
+- `synthesized/` and `cross-project/` subcategories (`patterns/decisions/gotchas/`
+  is just one partition)
+- The sync tool (swap rsync/robocopy for whatever you prefer)
+
+After any change to agent behavior, **update `AGENT-GUIDE.md` and bump its
+`updated:` frontmatter** — that file is the contract Claude Code re-reads on
+every session.
+
+---
+
+## Why Obsidian + Claude Code
+
+**Obsidian** provides:
+- `[[wiki-link]]` navigation (the backbone of cross-project note interlinking)
+- Frontmatter support (structured metadata: `tags`, `sources`, `updated`)
+- Local plain markdown (no lock-in, git-friendly)
+
+**Claude Code** provides:
+- Automatic `CLAUDE.md` loading (behavior contract picked up on every session)
+- File read/write + codebase search (agent scans `mirror/` for cross-project links)
+- Plan mode / todo tracking (agent can diff first, get user confirmation, then act)
+
+Neither is strictly required — the methodology works with other tools — but this
+is the smoothest combination right now.
 
 ---
 

@@ -1,3 +1,5 @@
+[English](CLAUDE.en.md) | **中文**
+
 # Vault Agent 入口
 
 你现在在 **knowledge-vault**，这是一个 Obsidian vault，作用是聚合多个代码项目的知识库并提炼跨项目洞察。
@@ -15,8 +17,9 @@
 
 ```
 knowledge-vault/
-├── AGENT-GUIDE.md            ← 完整工作手册
-├── CLAUDE.md                 ← 本文件，入口指引
+├── README.md / README.zh-CN.md         ← 仓库主页（英主中变）
+├── AGENT-GUIDE.md / AGENT-GUIDE.en.md  ← 完整工作手册（中主英变）
+├── CLAUDE.md / CLAUDE.en.md            ← 本文件（中主英变）
 ├── mirror/                   ← 【只读】各项目 docs/ 的镜像
 │   ├── <project-a>/          ← 示例：MotionForge（动画编辑器）
 │   └── <project-b>/          ← 示例：autorigging（AI 打关节研究）

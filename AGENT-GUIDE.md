@@ -3,6 +3,9 @@ tags: [meta, agent-guide]
 updated: 2026-04-21
 audience: obsidian-agent
 ---
+
+[English](AGENT-GUIDE.en.md) | **中文**
+
 # Obsidian Agent 工作指南
 
 本文档告诉你（Obsidian agent）如何处理用户从其他项目同步过来的知识文档。
@@ -26,7 +29,9 @@ audience: obsidian-agent
 
 ```
 vault-root/
-├── AGENT-GUIDE.md       ← 本文件，你的操作手册
+├── README.md / README.zh-CN.md         ← 仓库主页（英主中变）
+├── CLAUDE.md / CLAUDE.en.md            ← agent 入口（中主英变）
+├── AGENT-GUIDE.md / AGENT-GUIDE.en.md  ← 本文件（中主英变）
 ├── mirror/              ← 【只读】各项目 docs/ 的镜像（每次同步覆盖）
 │   ├── <project-a>/
 │   │   ├── architecture/
